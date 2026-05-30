@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DevLog Professional Dashboard</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <h1 class="dashboard-title">🚀 DevLog Pro Control Center</h1>
+    
+    <div class="layout-grid">
+        
+        <div class="glass-panel sticky-sidebar">
+            <h3>New Log Matrix</h3>
+            <form id="logForm">
+                <div class="form-group">
+                    <label for="title">Operation Title</label>
+                    <input type="text" id="title" required placeholder="Session marker summary...">
+                </div>
+                <div class="form-group">
+                    <label for="category">Architecture Layer</label>
+                    <select id="category">
+                        <option value="backend">Backend Engine</option>
+                        <option value="Frontend">Frontend Interface</option>
+                        <option value="Database">Database Ledger</option>
+                        <option value="Bugs">Bug Hotfix</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="description">Process Diagnostics</label>
+                    <textarea id="description" rows="4" required placeholder="Logs, analytical entries or build records..."></textarea>
+                </div>
+                <button type="submit" class="btn-primary">Commit to Stream</button>
+            </form>
+        </div>
+
+        <div>
+            <h2 class="log-stream-header">📋 Live Stream Activity</h2>
+            <div id="logsContainer"></div>
+        </div>
+
+    </div>
+
+    <script>
+        const API_URL = 'http://127.0.0.1:5000/api/logs';
+
+        // Fetch logs cleanly from Port 5000 pipeline
+        async function fetchLogs() {
+            try {
+                const response = await fetch(API_URL);
+                const logs = await response.json();
+                const container = document.getElementById('logsContainer');
+                
+                container.innerHTML = logs.length === 0 
+                    ? '<div class="glass-panel" style="color: #64748b; text-align: center;">System trace is empty. Commit a manual log to generate data.</div>' 
+                    : '';
+                
+               logs.forEach(log => {
+    // 🔍 Safely grab the category string, default to 'backend', and force lowercase
+    const categoryName = log.category ? String(log.category).trim() : 'backend';
+    const catClass = categoryName.toLowerCase();
+    
+    const card = document.createElement('div');
+    card.className = 'glass-panel log-card';
+    card.innerHTML = `
+        <div class="log-header">
+            <h3>${log.title}</h3>
+            <span class="badge badge-${catClass}">${categoryName}</span>
+        </div>
+        <p class="log-description">${log.description}</p>
+        <div class="log-footer">
+            <span class="log-time">⚡ System Timestamp: ${log.createdAt ? new Date(log.createdAt).toLocaleString() : 'Just now'}</span>
+            <button class="delete-action-btn" onclick="deleteLog('${log._id}')">Purge</button>
+        </div>
+    `;
+    container.appendChild(card);
+});
+            } catch (error) {
+                console.error('Error pipeline failed mapping stream:', error);
+            }
+        }
+
+        // Post custom interface entry payload values 
+        document.getElementById('logForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const logData = {
+                title: document.getElementById('title').value,
+                category: document.getElementById('category').value,
+                description: document.getElementById('description').value,
+                tags: ["fullstack-pro"]
+            };
+
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(logData)
+                });
+                if (response.ok) {
+                    document.getElementById('logForm').reset();
+                    fetchLogs();
+                }
+            } catch (error) {
+                console.error('Data dispatch pipeline crash:', error);
+            }
+        });
+
+        // Delete active logs from the server array
+        async function deleteLog(id) {
+            try {
+                const response = await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
+                if (response.ok) {
+                    fetchLogs();
+                }
+            } catch (error) {
+                console.error('Purge action rejected by target server:', error);
+            }
+        }
+
+        // Initialize active tracking instantly
+        fetchLogs();
+    </script>
+</body>
+</html>
